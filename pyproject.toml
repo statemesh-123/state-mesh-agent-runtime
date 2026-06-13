@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "state-mesh"
+version = "0.1.0"
+description = "Async-native agentic pipeline runtime for Python backend engineers"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "anyio>=4.0",
+]
+
+[project.optional-dependencies]
+redis = ["redis>=5.0"]
+postgres = ["asyncpg>=0.29"]
+otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 88

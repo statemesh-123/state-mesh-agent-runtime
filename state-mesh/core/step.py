@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar, Literal, List, Optional, Callable
+from typing import Any, Literal, Optional, Callable
 from context import Context, Flag
 from pydantic import BaseModel,Field
 import time
@@ -30,7 +30,7 @@ class Branch:
 class Step:
     def __init__(self, fn: Callable, name:str |None=None, retry_config:RetryConfig=None, 
                  timeout_seconds:Optional[float]=None, guard_before:list=None, guard_after:list=None, 
-                 tags:Optional[List[str]]=None):
+                 tags:Optional[list[str]]=None):
         self.name = name or fn.__name__
         self.fn = fn
         self.retry_config = retry_config or RetryConfig()
@@ -40,42 +40,50 @@ class Step:
         self.tags = tags or []
 
 
-async def execute(self, ctx:Context) -> StepResult:
-    # This is where the main logic for executing the step will go, including handling retries, timeouts, guards, and collecting flags.
-    
-    start = time.monotonic()
-    last_error = None
-    ctx._set_current_step(self.name)
-    for attempt in range(1, self.retry_config.max_attempts + 1):
-        try:
-            if self.timeout_seconds:
-                result = await asyncio.wait_for(self.fn(ctx), timeout=self.timeout_seconds)
-            else:
-                result = await self.fn(ctx)
+    async def execute(self, ctx:Context) -> StepResult:
+        # This is where the main logic for executing the step will go, including handling retries, timeouts, guards, and collecting flags.
+        
+        start = time.monotonic()
+        last_error = None
+        ctx._set_current_step(self.name)
+        for attempt in range(1, self.retry_config.max_attempts + 1):
+            try:
+                if self.timeout_seconds:
+                    result = await asyncio.wait_for(self.fn(ctx), timeout=self.timeout_seconds)
+                else:
+                    result = await self.fn(ctx)
 
-            elapsed = (time.monotonic() - start) * 1000
+                elapsed = (time.monotonic() - start) * 1000
 
-            if isinstance(result, Branch):
+                if isinstance(result, Branch):
+                    return StepResult(status="success", flags=ctx.flags, step_name=self.name, output=result, duration_ms=elapsed, attempts=attempt)
+
                 return StepResult(status="success", flags=ctx.flags, step_name=self.name, output=result, duration_ms=elapsed, attempts=attempt)
-
-            return StepResult(status="success", flags=ctx.flags, step_name=self.name, output=result, duration_ms=elapsed, attempts=attempt)
-        except asyncio.TimeoutError:
-            elapsed = (time.monotonic() - start) * 1000
-            return StepResult(
-                status="timed_out",
-                flags=ctx.flags,
-                step_name=self.name,
-                output=None,
-                duration_ms=elapsed,
-                attempts=attempt,
-                error=f"Step timed out after {self.timeout_seconds} seconds"    
-            )
-        except Exception as e:
-            last_error = e
-            if attempt < self.retry_config.max_attempts:
-                wait = self.retry_config.backoff_base * (self.retry_config.backoff_multiplier ** (attempt - 1))
-                await asyncio.sleep(wait)
-            continue
+            except asyncio.TimeoutError:
+                elapsed = (time.monotonic() - start) * 1000
+                return StepResult(
+                    status="timed_out",
+                    flags=ctx.flags,
+                    step_name=self.name,
+                    output=None,
+                    duration_ms=elapsed,
+                    attempts=attempt,
+                    error=f"Step timed out after {self.timeout_seconds} seconds"    
+                )
+            except Exception as e:
+                last_error = e
+                if attempt < self.retry_config.max_attempts:
+                    wait = self.retry_config.backoff_base * (self.retry_config.backoff_multiplier ** (attempt - 1))
+                    await asyncio.sleep(wait)
+                continue
+        
+        elapsed = (time.monotonic() - start) * 1000
+        return StepResult(status="failed", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=self.retry_config.max_attempts, error=str(last_error))
     
-    elapsed = (time.monotonic() - start) * 1000
-    return StepResult(status="failed", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=self.retry_config.max_attempts, error=str(last_error))
+    
+def step(fn=None, *, name=None, timeout_seconds=None, retry_config=None, guard_before=None, guard_after=None, tags=None):
+    if fn is not None:
+        return Step(fn=fn)
+    def wrap(f):
+        return Step(fn=f, name=name, timeout_seconds=timeout_seconds, retry_config=retry_config, guard_before=guard_before, guard_after=guard_after, tags=tags)
+    return wrap

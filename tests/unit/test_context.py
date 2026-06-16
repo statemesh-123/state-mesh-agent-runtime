@@ -1,8 +1,9 @@
 import sys
+from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-sys.path.insert(0, r"C:\Users\megha\OneDrive\Desktop\AGENT RUNTIME\state-mesh\core")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
 from context import Context, ContextMutationError
 
 
@@ -12,7 +13,7 @@ class DummyState(BaseModel):
 
 def make_ctx(**kwargs) -> Context:
     return Context(state=DummyState(), **kwargs)
-print("Running tests for Context class...")
+
 
 
 def test_set_raises_on_duplicate_key():

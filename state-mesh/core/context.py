@@ -10,7 +10,7 @@ StateSchema = TypeVar("StateSchema", bound=BaseModel)
 
 
 class Flag(BaseModel):
-    step_name:str # STEP obj
+    step_name:str 
     severity: Literal["info","warn","error"]
     timestamp:datetime=Field(default_factory=lambda:datetime.now(timezone.utc))
     flag_type: str

@@ -42,14 +42,15 @@ class Parser:
                 start = arr_start
             elif arr_start != -1:
                 start = min(start, arr_start)
-            extracted = raw[start:]
+            try:
+                parsed, _ = json.JSONDecoder().raw_decode(raw, start)
+            except json.JSONDecodeError as e:
+                return ParseResult(success=False, data=None, error=f"JSON decode error: {e}")
         else:
-            extracted = match.group(1)
-
-        try:
-            parsed = json.loads(extracted)
-        except json.JSONDecodeError as e:
-            return ParseResult(success=False, data=None, error=f"JSON decode error: {e}")
+            try:
+                parsed = json.loads(match.group(1))
+            except json.JSONDecodeError as e:
+                return ParseResult(success=False, data=None, error=f"JSON decode error: {e}")
 
         try:
             validated = contract.target_schema(**parsed)

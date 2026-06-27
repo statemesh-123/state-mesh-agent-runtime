@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Generic, TypeVar, Literal, List
+from typing import Any, Generic, TypeVar, Literal, TYPE_CHECKING
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel,Field
+if TYPE_CHECKING:
+    from bus import MCPBus
 
 StateSchema = TypeVar("StateSchema", bound=BaseModel)
 
@@ -25,18 +27,23 @@ class Context(Generic[StateSchema]):
     Context is the main object that is passed to all steps.
     It contains the state, run_id, trace_id, pipeline_name and flags.
     """
-    def __init__(self,state,run_id=None,trace_id=None,pipeline_name="unnamed"):
+    def __init__(self,state,run_id=None,trace_id=None,pipeline_name="unnamed",tools:MCPBus|None=None):
         self._state = state
         self._run_id = run_id or str(uuid.uuid4())
         self._trace_id = trace_id or str(uuid.uuid4())
         self._pipeline_name = pipeline_name
         self._flags:list[Flag] = []
         self._extras:dict[str,Any]={}
+        self._tools=tools
         self._step_name=None
        
     @property
     def state(self) -> StateSchema:
         return self._state
+    
+    @property
+    def tools(self) -> MCPBus|None:
+        return self._tools
         
     @property
     def run_id(self) -> str:

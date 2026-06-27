@@ -70,9 +70,12 @@ class Pipeline:
                     continue
 
                 ctx._replace_state(result.output)
+                if self.state_backend:
+                    await self.state_backend.save(ctx.run_id, ctx.state)
 
             duration = (time.monotonic() - start) * 1000
             self._emitter.pipeline_finished(ctx, self.name, duration, "success")
+            
             return PipelineResult(output=step_results[-1].output if step_results else None, run_id=ctx.run_id, trace_id=ctx.trace_id, duration_ms=duration, status="success", step_results=step_results, flags=ctx.flags)
         finally:
             if bus:

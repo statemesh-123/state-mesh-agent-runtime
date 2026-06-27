@@ -1,22 +1,13 @@
-import sys
 import pytest
-from pathlib import Path
 from typing import Any
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "guardrails"))
-
 from pydantic import BaseModel
-from context import Context
 
-from base import Guard, GuardResult
-from schema import SchemaGuard
-from content import PIIGuard
-from runner import run_guards
+from state_mesh.core.context import Context
+from state_mesh.guardrails.base import Guard, GuardResult
+from state_mesh.guardrails.schema import SchemaGuard
+from state_mesh.guardrails.content import PIIGuard
+from state_mesh.guardrails.runner import run_guards
 
-
-# --- helpers ---
 
 class DummyState(BaseModel):
     value: int = 0
@@ -70,8 +61,6 @@ async def test_schema_guard_fails_missing_field():
 @pytest.mark.asyncio
 async def test_schema_guard_fails_wrong_type():
     guard = SchemaGuard(User)
-    result = await guard.check(make_ctx(), {"name": "Prabha", "age": "not_an_int"})
-    # pydantic coerces str -> int so check with a non-coercible value
     result2 = await guard.check(make_ctx(), {"name": "Prabha", "age": "abc"})
     assert result2.passed is False
 

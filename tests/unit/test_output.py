@@ -1,14 +1,10 @@
-import sys
 import pytest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "output"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
-
 from pydantic import BaseModel
-from contract import OutputContract
-from parser import Parser, ParseResult
-from retry import run_with_retry, ContractViolationError
+
+from state_mesh.output.contract import OutputContract
+from state_mesh.output.parser import Parser, ParseResult
+from state_mesh.output.retry import run_with_retry
+from state_mesh.output.parser import ContractViolationError
 
 
 class User(BaseModel):
@@ -174,7 +170,7 @@ async def test_retry_corrective_prompt_includes_error_and_schema():
     await run_with_retry(capturing_llm, "initial prompt", make_contract(max_retries=3), Parser())
     assert len(prompts) == 2
     assert "Error" in prompts[1]
-    assert "name" in prompts[1]  # schema field appears in retry prompt
+    assert "name" in prompts[1]
 
 
 @pytest.mark.asyncio

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from client import MCPClient
-from registry import MCPRegistry
+from state_mesh.mcp.client import MCPClient
+from state_mesh.mcp.registry import MCPRegistry
 
 
 class MCPBus:

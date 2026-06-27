@@ -1,6 +1,6 @@
 from opentelemetry import trace
 
-from core.context import Context
+from state_mesh.core.context import Context
 
 
 class EventEmitter:

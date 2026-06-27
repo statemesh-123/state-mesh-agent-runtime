@@ -5,8 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from base import Guard, GuardResult
-from core.context import Context
+from state_mesh.guardrails.base import Guard, GuardResult
+from state_mesh.core.context import Context
 
 EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
@@ -21,11 +21,9 @@ class PIIGuard(Guard):
         self.sensitive_fields = sensitive_fields
         self.ignore_patterns = [re.compile(p) for p in (ignore_patterns or [])]
         self.severity = severity
-        
 
     async def check(self, ctx: Context, data: Any) -> GuardResult:
         if self.sensitive_fields and isinstance(data, BaseModel):
-            #field -aware check
             candidates = {
                 f: str(v)
                 for f, v in data.model_dump().items()

@@ -1,29 +1,28 @@
 from __future__ import annotations
-import sys
+
 import time
-from pathlib import Path
-from typing import Any, Literal, Optional
-from context import Context, Flag
-from step import StepResult, Step, Branch
+from typing import Any, Literal
+
 from pydantic import BaseModel
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "observability"))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp"))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from events import EventEmitter
-from bus import MCPBus
+from state_mesh.core.context import Context, Flag
+from state_mesh.core.step import StepResult, Step, Branch
+from state_mesh.observability.events import EventEmitter
+from state_mesh.mcp.bus import MCPBus
+
 
 class PipelineResult(BaseModel):
-    output:Any
-    run_id:str
-    trace_id:str
-    duration_ms:float
-    status: Literal["success","failed","timed_out","guarded"]
-    step_results:list[StepResult]
-    flags:list[Flag]
+    output: Any
+    run_id: str
+    trace_id: str
+    duration_ms: float
+    status: Literal["success", "failed", "timed_out", "guarded"]
+    step_results: list[StepResult]
+    flags: list[Flag]
+
 
 class Pipeline:
-    def __init__(self, steps: list[Step], name: str = None, state_backend: Any = None, mcp_servers:list[str] | None = None):
+    def __init__(self, steps: list[Step], name: str = None, state_backend: Any = None, mcp_servers: list[str] | None = None):
         self.name = name
         self.steps = steps
         self.state_backend = state_backend

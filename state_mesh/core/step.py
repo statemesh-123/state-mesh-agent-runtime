@@ -1,36 +1,38 @@
 from __future__ import annotations
+
 import asyncio
+import time
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Callable
-from context import Context, Flag
-from pydantic import BaseModel,Field
-import time
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "guardrails"))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "output"))
-from runner import run_guards
-from retry import run_with_retry
-from parser import Parser
-from contract import OutputContract
+
+from pydantic import BaseModel, Field
+
+from state_mesh.core.context import Context, Flag
+from state_mesh.guardrails.runner import run_guards
+from state_mesh.output.retry import run_with_retry
+from state_mesh.output.parser import Parser
+from state_mesh.output.contract import OutputContract
+
 
 class StepResult(BaseModel):
-    status: Literal["success","failed","timed_out","guarded"]
-    step_name:str
-    output:Any
-    duration_ms:float
-    attempts:int
-    flags:list[Flag]=Field(default_factory=list)
-    error:Optional[str]=None
+    status: Literal["success", "failed", "timed_out", "guarded"]
+    step_name: str
+    output: Any
+    duration_ms: float
+    attempts: int
+    flags: list[Flag] = Field(default_factory=list)
+    error: Optional[str] = None
+
 
 @dataclass
 class RetryConfig:
-    max_attempts:int=3
-    backoff_base:float=1.0
-    backoff_multiplier:float=2.0
+    max_attempts: int = 3
+    backoff_base: float = 1.0
+    backoff_multiplier: float = 2.0
+
 
 class Branch:
-    def __init__(self, to:str, context: Context):
+    def __init__(self, to: str, context: Context):
         self.to = to
         self.context = context
 
@@ -47,7 +49,6 @@ class Step:
         self.guard_after = guard_after or []
         self.tags = tags or []
         self.output_contract = output_contract
-
 
     async def execute(self, ctx: Context, prompt: str | None = None) -> StepResult:
         start = time.monotonic()
@@ -105,8 +106,8 @@ class Step:
 
         elapsed = (time.monotonic() - start) * 1000
         return StepResult(status="failed", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=self.retry_config.max_attempts, error=str(last_error))
-    
-    
+
+
 def step(fn=None, *, name=None, timeout_seconds=None, retry_config=None, guard_before=None, guard_after=None, tags=None, output_contract=None):
     if fn is not None:
         return Step(fn=fn)

@@ -1,10 +1,7 @@
-import sys
-from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
-from context import Context, ContextMutationError
+from state_mesh.core.context import Context, ContextMutationError
 
 
 class DummyState(BaseModel):
@@ -13,7 +10,6 @@ class DummyState(BaseModel):
 
 def make_ctx(**kwargs) -> Context:
     return Context(state=DummyState(), **kwargs)
-
 
 
 def test_set_raises_on_duplicate_key():

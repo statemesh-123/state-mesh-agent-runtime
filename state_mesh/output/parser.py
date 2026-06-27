@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from pydantic import ValidationError
-from contract import OutputContract
+
+from state_mesh.output.contract import OutputContract
 
 
 class ContractViolationError(Exception):

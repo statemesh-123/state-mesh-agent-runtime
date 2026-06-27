@@ -1,6 +1,6 @@
 from opentelemetry import trace
 
-from core.context import Flag
+from state_mesh.core.context import Flag
 
 
 def attach_flags_to_span(flags: list[Flag]) -> None:

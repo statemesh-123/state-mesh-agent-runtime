@@ -18,6 +18,9 @@ postgres = ["asyncpg>=0.29"]
 otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["state_mesh"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 

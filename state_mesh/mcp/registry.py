@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from client import MCPClient
+from state_mesh.mcp.client import MCPClient
 
 
 class ToolNotFoundError(Exception):
@@ -14,7 +14,6 @@ class MCPRegistry:
     def register(self, client: MCPClient) -> None:
         for tool in client.tools:
             if tool in self._map:
-                # collision — rename the existing entry to namespaced form then add new one namespaced
                 existing = self._map.pop(tool)
                 self._map[f"{existing.server_url}.{tool}"] = existing
                 self._map[f"{client.server_url}.{tool}"] = client

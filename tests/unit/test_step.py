@@ -1,14 +1,9 @@
-import sys
 import pytest
 import asyncio
-import os
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "guardrails"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh"))
 from pydantic import BaseModel
-from context import Context
-from step import Step, StepResult, Branch, RetryConfig, step
+
+from state_mesh.core.context import Context
+from state_mesh.core.step import Step, StepResult, Branch, RetryConfig, step
 
 
 class DummyState(BaseModel):
@@ -18,8 +13,6 @@ class DummyState(BaseModel):
 def make_ctx() -> Context:
     return Context(state=DummyState())
 
-
-# --- @step decorator ---
 
 def test_step_decorator_no_args_wraps_into_step():
     @step
@@ -34,8 +27,6 @@ def test_step_decorator_with_args_wraps_correctly():
     assert isinstance(my_fn, Step)
     assert my_fn.timeout_seconds == 30
 
-
-# --- execute ---
 
 @pytest.mark.asyncio
 async def test_successful_step_returns_success():

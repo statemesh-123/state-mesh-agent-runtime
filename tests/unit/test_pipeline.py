@@ -2,15 +2,10 @@ import sys
 import asyncio
 import pytest
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "guardrails"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh"))
-
 from pydantic import BaseModel
-from context import Context
-from step import Step, Branch, RetryConfig
-from pipeline import Pipeline, PipelineResult
+from state_mesh.core.context import Context
+from state_mesh.core.step import Step, Branch, RetryConfig
+from state_mesh.core.pipeline import Pipeline, PipelineResult
 
 
 class DummyState(BaseModel):
@@ -81,7 +76,7 @@ async def test_pipeline_returns_guarded():
     # Simulate a guarded result by patching execute directly
     original_execute = s.execute
     async def mock_execute(ctx):
-        from step import StepResult
+        from state_mesh.core.step import StepResult
         return StepResult(status="guarded", step_name="s1", output=None, duration_ms=0, attempts=1)
     s.execute = mock_execute
     result = await Pipeline(steps=[s]).run(make_ctx())

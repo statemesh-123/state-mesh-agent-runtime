@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from typing import Any, Type
+
 from pydantic import BaseModel, ValidationError
 
-from base import Guard, GuardResult
-from core.context import Context
+from state_mesh.guardrails.base import Guard, GuardResult
+from state_mesh.core.context import Context
 
 
 class SchemaGuard(Guard):

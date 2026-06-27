@@ -3,8 +3,8 @@ from typing import Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from core.context import Context
-from core.pipeline import Pipeline, PipelineResult
+from state_mesh.core.context import Context
+from state_mesh.core.pipeline import Pipeline, PipelineResult
 
 _STATUS_CODES: dict[str, int] = {
     "failed": 500,

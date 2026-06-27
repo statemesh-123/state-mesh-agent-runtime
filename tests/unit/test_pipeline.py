@@ -4,6 +4,8 @@ import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "core"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh" / "guardrails"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state-mesh"))
 
 from pydantic import BaseModel
 from context import Context

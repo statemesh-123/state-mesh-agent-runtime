@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "observability"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from events import EventEmitter
+from observability.events import EventEmitter
 
 class PipelineResult(BaseModel):
     output:Any

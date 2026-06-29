@@ -39,3 +39,47 @@ class PIIGuard(Guard):
                 return GuardResult(passed=False, severity=self.severity, reason=f"Email detected in field '{field}'")
 
         return GuardResult(passed=True, reason="No PII detected")
+
+
+class ConfidenceGuard(Guard):
+    def __init__(self, min_confidence: float, field: str = "confidence", severity: Literal["warn", "block"] = "block"):
+        self.min_confidence = min_confidence
+        self.field = field
+        self.severity = severity
+
+    async def check(self, ctx: Context, data: Any) -> GuardResult:
+        if isinstance(data, BaseModel):
+            score = data.model_dump().get(self.field)
+        elif isinstance(data, dict):
+            score = data.get(self.field)
+        else:
+            return GuardResult(passed=False, severity=self.severity, reason=f"Cannot extract confidence field '{self.field}' from {type(data).__name__}")
+
+        if score is None:
+            return GuardResult(passed=False, severity=self.severity, reason=f"Confidence field '{self.field}' missing")
+
+        if score < self.min_confidence:
+            return GuardResult(passed=False, severity=self.severity, reason=f"Confidence {score:.2f} below threshold {self.min_confidence:.2f}")
+
+        return GuardResult(passed=True, reason=f"Confidence {score:.2f} meets threshold")
+
+
+class ToxicityGuard(Guard):
+    def __init__(self, threshold: float = 0.5, categories: list[str] | None = None, severity: Literal["warn", "block"] = "block"):
+        from detoxify import Detoxify
+        self._model = Detoxify("original")
+        self.threshold = threshold
+        self.categories = categories or ["toxicity", "severe_toxicity", "obscene", "threat", "insult", "identity_attack"]
+        self.severity = severity
+
+    async def check(self, ctx: Context, data: Any) -> GuardResult:
+        text = data if isinstance(data, str) else str(data)
+        scores = self._model.predict(text)
+
+        for category in self.categories:
+            score = scores.get(category, 0)
+            if score >= self.threshold:
+                return GuardResult(passed=False, severity=self.severity, reason=f"Toxicity detected — {category}: {score:.2f} (threshold: {self.threshold:.2f})")
+
+        return GuardResult(passed=True, reason="No toxic content detected")
+

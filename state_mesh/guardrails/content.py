@@ -8,6 +8,13 @@ from pydantic import BaseModel
 from state_mesh.guardrails.base import Guard, GuardResult
 from state_mesh.core.context import Context
 
+try:
+    from detoxify import Detoxify
+except ImportError:  # pragma: no cover - optional dependency
+    class Detoxify:  # type: ignore[no-redef]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ImportError("detoxify is required to use ToxicityGuard")
+
 EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 
@@ -66,7 +73,6 @@ class ConfidenceGuard(Guard):
 
 class ToxicityGuard(Guard):
     def __init__(self, threshold: float = 0.5, categories: list[str] | None = None, severity: Literal["warn", "block"] = "block"):
-        from detoxify import Detoxify
         self._model = Detoxify("original")
         self.threshold = threshold
         self.categories = categories or ["toxicity", "severe_toxicity", "obscene", "threat", "insult", "identity_attack"]

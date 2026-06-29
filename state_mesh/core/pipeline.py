@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from state_mesh.core.context import Context, Flag
 from state_mesh.core.step import StepResult, Step, Branch
+from state_mesh.core.parallel import Parallel
 from state_mesh.observability.events import EventEmitter
 from state_mesh.mcp.bus import MCPBus
 
@@ -44,6 +45,17 @@ class Pipeline:
             self._emitter.pipeline_started(ctx, self.name)
 
             for step in self.steps:
+                if isinstance(step, Parallel):
+                    parallel_results = await step.execute(ctx)
+                    step_results.extend(parallel_results)
+                    failed = next((r for r in parallel_results if isinstance(r, BaseException) or r.status != "success"), None)
+                    if failed:
+                        duration = (time.monotonic() - start) * 1000
+                        status = failed.status if isinstance(failed, StepResult) else "failed"
+                        self._emitter.pipeline_finished(ctx, self.name, duration, status)
+                        return PipelineResult(output=None, run_id=ctx.run_id, trace_id=ctx.trace_id, duration_ms=duration, status=status, step_results=step_results, flags=ctx.flags)
+                    continue
+
                 self._emitter.step_started(ctx, step.name)
                 result = await step.execute(ctx)
                 self._emitter.step_finished(ctx, step.name, result.duration_ms, result.status)

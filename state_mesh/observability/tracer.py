@@ -1,18 +1,21 @@
 from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
+
+_provider: TracerProvider | None = None
 
 
+def _default_provider() -> TracerProvider:
+    global _provider
+    if _provider is None:
+        _provider = TracerProvider()
+        _provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+        trace.set_tracer_provider(_provider)
+    return _provider
 
 
-def get_tracer():
-    
-    """
-        Provides a named OpenTelemetry tracer for the state-mesh runtime.
-
-        All spans emitted by this library are created through `get_tracer()`, which
-        returns a tracer scoped to the name "Tracer". Using a named tracer matters
-        because OpenTelemetry uses the tracer name as the instrumentation scope —
-        it appears in exported trace data and lets you distinguish spans produced by
-        this library from spans produced by application code or other libraries.
-    """
-    
-    return trace.get_tracer("RuntimeTracer")
+def get_tracer(exporter=None):
+    provider = _default_provider()
+    if exporter is not None:
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+    return provider.get_tracer("RuntimeTracer")

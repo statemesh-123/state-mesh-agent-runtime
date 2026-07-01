@@ -128,7 +128,7 @@ async def test_parser_markdown_block_valid():
     contract = make_contract(parser_strategy="markdown_block")
     result = await parser.parse('```json\n{"name": "State mesh"}\n```', contract)
     assert result.success is True
-    assert result.data.name == "state-mesh"
+    assert result.data.name == "State mesh"
 
 
 @pytest.mark.asyncio

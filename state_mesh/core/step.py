@@ -51,14 +51,14 @@ class Step:
         self.output_contract = output_contract
 
     async def execute(self, ctx: Context, prompt: str | None = None) -> StepResult:
-        start = time.monotonic()
+        start = time.perf_counter()
         last_error = None
         ctx._set_current_step(self.name)
 
         if self.guard_before:
             guard_result = await run_guards(self.guard_before, ctx, ctx.state)
             if not guard_result.passed:
-                elapsed = (time.monotonic() - start) * 1000
+                elapsed = (time.perf_counter() - start) * 1000
                 return StepResult(status="guarded", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=0, error=guard_result.reason)
 
         for attempt in range(1, self.retry_config.max_attempts + 1):
@@ -77,17 +77,17 @@ class Step:
                 if self.guard_after:
                     guard_result = await run_guards(self.guard_after, ctx, result)
                     if not guard_result.passed:
-                        elapsed = (time.monotonic() - start) * 1000
+                        elapsed = (time.perf_counter() - start) * 1000
                         return StepResult(status="guarded", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=attempt, error=guard_result.reason)
 
-                elapsed = (time.monotonic() - start) * 1000
+                elapsed = (time.perf_counter() - start) * 1000
 
                 if isinstance(result, Branch):
                     return StepResult(status="success", flags=ctx.flags, step_name=self.name, output=result, duration_ms=elapsed, attempts=attempt)
 
                 return StepResult(status="success", flags=ctx.flags, step_name=self.name, output=result, duration_ms=elapsed, attempts=attempt)
             except asyncio.TimeoutError:
-                elapsed = (time.monotonic() - start) * 1000
+                elapsed = (time.perf_counter() - start) * 1000
                 return StepResult(
                     status="timed_out",
                     flags=ctx.flags,
@@ -104,7 +104,7 @@ class Step:
                     await asyncio.sleep(wait)
                 continue
 
-        elapsed = (time.monotonic() - start) * 1000
+        elapsed = (time.perf_counter() - start) * 1000
         return StepResult(status="failed", flags=ctx.flags, step_name=self.name, output=None, duration_ms=elapsed, attempts=self.retry_config.max_attempts, error=str(last_error))
 
 

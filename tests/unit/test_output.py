@@ -81,9 +81,9 @@ async def test_parser_schema_validation_failure():
 async def test_parser_extra_text_around_json():
     parser = Parser()
     contract = make_contract()
-    result = await parser.parse('Here is the result: {"name": "Prabha"} hope that helps!', contract)
+    result = await parser.parse('Here is the result: {"name": "state-mesh"} hope that helps!', contract)
     assert result.success is True
-    assert result.data.name == "Prabha"
+    assert result.data.name == "state-mesh"
 
 
 @pytest.mark.asyncio
@@ -96,21 +96,66 @@ async def test_parser_raw_strategy_returns_raw_string():
 
 
 @pytest.mark.asyncio
-async def test_parser_xml_strategy_not_implemented():
+async def test_parser_xml_valid():
     parser = Parser()
     contract = make_contract(parser_strategy="xml")
-    result = await parser.parse("<name>Prabha</name>", contract)
-    assert result.success is False
-    assert "not yet implemented" in result.error.lower()
+    result = await parser.parse("<user><name>state-mesh</name></user>", contract)
+    assert result.success is True
+    assert result.data.name == "state-mesh"
 
 
 @pytest.mark.asyncio
-async def test_parser_markdown_block_strategy_not_implemented():
+async def test_parser_xml_invalid_xml():
+    parser = Parser()
+    contract = make_contract(parser_strategy="xml")
+    result = await parser.parse("not xml at all", contract)
+    assert result.success is False
+    assert "XML parse error" in result.error
+
+
+@pytest.mark.asyncio
+async def test_parser_xml_schema_validation_failure():
+    parser = Parser()
+    contract = make_contract(parser_strategy="xml")
+    result = await parser.parse("<user><wrong_field>123</wrong_field></user>", contract)
+    assert result.success is False
+    assert "validation" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_parser_markdown_block_valid():
     parser = Parser()
     contract = make_contract(parser_strategy="markdown_block")
-    result = await parser.parse("some text", contract)
+    result = await parser.parse('```json\n{"name": "State mesh"}\n```', contract)
+    assert result.success is True
+    assert result.data.name == "state-mesh"
+
+
+@pytest.mark.asyncio
+async def test_parser_markdown_block_without_json_label():
+    parser = Parser()
+    contract = make_contract(parser_strategy="markdown_block")
+    result = await parser.parse('```\n{"name": "state-mesh"}\n```', contract)
+    assert result.success is True
+    assert result.data.name == "state-mesh"
+
+
+@pytest.mark.asyncio
+async def test_parser_markdown_block_no_fence_fails():
+    parser = Parser()
+    contract = make_contract(parser_strategy="markdown_block")
+    result = await parser.parse('{"name": "state-mesh"}', contract)
     assert result.success is False
-    assert "not yet implemented" in result.error.lower()
+    assert "No markdown JSON block found" in result.error
+
+
+@pytest.mark.asyncio
+async def test_parser_markdown_block_schema_validation_failure():
+    parser = Parser()
+    contract = make_contract(parser_strategy="markdown_block")
+    result = await parser.parse('```json\n{"wrong_field": 123}\n```', contract)
+    assert result.success is False
+    assert "validation" in result.error.lower()
 
 
 # --- retry ---
@@ -165,7 +210,7 @@ async def test_retry_corrective_prompt_includes_error_and_schema():
         prompts.append(prompt)
         if len(prompts) == 1:
             return "bad response"
-        return '{"name": "Prabha"}'
+        return '{"name": "state-mesh"}'
 
     await run_with_retry(capturing_llm, "initial prompt", make_contract(max_retries=3), Parser())
     assert len(prompts) == 2

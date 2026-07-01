@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,9 +27,9 @@ class Parser:
         if contract.parser_strategy == "json":
             return self._parse_json(raw, contract)
         elif contract.parser_strategy == "xml":
-            return ParseResult(success=False, data=None, error="XML parsing not yet implemented")
+            return self._parse_xml(raw, contract)
         elif contract.parser_strategy == "markdown_block":
-            return ParseResult(success=False, data=None, error="Markdown block parsing not yet implemented")
+            return self._parse_markdown_block(raw, contract)
         elif contract.parser_strategy == "raw":
             return ParseResult(success=True, data=raw.strip())
 
@@ -56,6 +57,35 @@ class Parser:
         try:
             validated = contract.target_schema(**parsed)
         except (ValidationError, TypeError) as e:
+            return ParseResult(success=False, data=None, error=f"Schema validation error: {e}")
+
+        return ParseResult(success=True, data=validated)
+
+    def _parse_markdown_block(self, raw: str, contract: OutputContract) -> ParseResult:
+        match = re.search(r"```(?:json)?\s*({.*?})\s*```", raw, re.DOTALL)
+        if not match:
+            return ParseResult(success=False, data=None, error="No markdown JSON block found in response")
+        try:
+            parsed = json.loads(match.group(1))
+        except json.JSONDecodeError as e:
+            return ParseResult(success=False, data=None, error=f"JSON decode error: {e}")
+        try:
+            validated = contract.target_schema(**parsed)
+        except (ValidationError, TypeError) as e:
+            return ParseResult(success=False, data=None, error=f"Schema validation error: {e}")
+        return ParseResult(success=True, data=validated)
+
+    def _parse_xml(self, raw: str, contract: OutputContract) -> ParseResult:
+        try:
+            root = ET.fromstring(raw.strip())
+        except ET.ParseError as e:
+            return ParseResult(success=False, data=None, error=f"XML parse error: {e}")
+
+        data = {child.tag: child.text for child in root}
+
+        try:
+            validated = contract.target_schema(**data)
+        except (Exception,) as e:
             return ParseResult(success=False, data=None, error=f"Schema validation error: {e}")
 
         return ParseResult(success=True, data=validated)
